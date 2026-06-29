@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือการเขียน G-Code สไตล์ Heidenhain (.hnc)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f1117; color: #e0e0e0; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1f2e, #222840); border-bottom: 2px solid #3a7bd5; padding: 32px 40px; }
+  header h1 { font-size: 2rem; color: #fff; }
+  header p { color: #8899bb; margin-top: 6px; font-size: 0.95rem; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 40px; }
+  nav a { background: #1e2535; color: #7ab3f5; text-decoration: none; padding: 7px 16px; border-radius: 20px; font-size: 0.85rem; border: 1px solid #2a3550; }
+  nav a:hover { background: #2a3d6e; color: #fff; }
+  section { margin-bottom: 48px; }
+  h2 { font-size: 1.3rem; color: #7ab3f5; border-left: 4px solid #3a7bd5; padding-left: 14px; margin-bottom: 20px; }
+  h3 { font-size: 1rem; color: #aac4e8; margin: 18px 0 10px; }
+  p, li { font-size: 0.93rem; color: #c0cde0; margin-bottom: 8px; }
+  ul { padding-left: 20px; }
+  .code-block { background: #0a0e1a; border: 1px solid #1e2d4a; border-radius: 10px; overflow: hidden; margin: 16px 0; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; }
+  .code-header { background: #141929; padding: 8px 16px; font-size: 0.78rem; color: #5577aa; border-bottom: 1px solid #1e2d4a; display: flex; justify-content: space-between; align-items: center; }
+  .code-header span.tag { background: #1a3060; color: #7ab3f5; padding: 2px 10px; border-radius: 10px; font-size: 0.72rem; }
+  .code-body { padding: 16px; overflow-x: auto; }
+  .code-body .line { display: flex; gap: 12px; line-height: 1.8; }
+  .code-body .ln { color: #334466; min-width: 28px; text-align: right; user-select: none; }
+  .kw { color: #569cd6; } .fn { color: #c586c0; } .ax { color: #4ec9b0; } .num { color: #b5cea8; }
+  .m { color: #d7ba7d; } .f { color: #ce9178; } .r { color: #9cdcfe; } .cm { color: #6a9955; } .s { color: #f0ad4e; }
+  code { background: #1a2238; color: #9cdcfe; padding: 1px 7px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 0.85em; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+  th { background: #141929; color: #7ab3f5; padding: 10px 14px; text-align: left; border-bottom: 2px solid #2a3a5e; }
+  td { padding: 9px 14px; border-bottom: 1px solid #1a2235; color: #c0cde0; }
+  tr:hover td { background: #131825; }
+  td.mono { font-family: 'Consolas', monospace; color: #9cdcfe; font-size: 0.83rem; }
+  td.ok { color: #4ec9b0; } td.warn { color: #d7ba7d; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+  .card { background: #111624; border: 1px solid #1e2d4a; border-radius: 10px; padding: 18px 20px; }
+  .card h4 { color: #7ab3f5; margin-bottom: 10px; font-size: 0.95rem; }
+  .card p, .card li { font-size: 0.85rem; }
+  .flow { display: flex; flex-direction: column; gap: 0; margin: 16px 0; max-width: 520px; }
+  .flow-step { display: flex; align-items: flex-start; gap: 14px; }
+  .flow-left { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
+  .flow-dot { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; flex-shrink: 0; }
+  .flow-line { width: 2px; flex: 1; min-height: 18px; background: #1e3060; }
+  .flow-body { padding: 4px 0 20px; flex: 1; }
+  .flow-body .title { color: #fff; font-size: 0.9rem; font-weight: 600; }
+  .flow-body .sub { color: #7a90b0; font-size: 0.8rem; margin-top: 2px; }
+  .peck-viz { background: #0a0e1a; border: 1px solid #1e2d4a; border-radius: 10px; padding: 20px; margin: 16px 0; display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .peck-col { flex: 1; min-width: 200px; }
+  .peck-col h4 { color: #7ab3f5; font-size: 0.85rem; margin-bottom: 12px; }
+  .z-bar { display: flex; flex-direction: column; border-left: 2px solid #334; }
+  .z-row { display: flex; align-items: center; gap: 10px; font-family: 'Consolas', monospace; font-size: 0.78rem; padding: 3px 0 3px 10px; position: relative; }
+  .z-row::before { content: ''; position: absolute; left: -1px; width: 8px; height: 2px; background: currentColor; }
+  .z-row.cut { color: #4ec9b0; } .z-row.ret { color: #ce9178; } .z-row.clr { color: #569cd6; }
+  .z-val { min-width: 72px; font-weight: bold; } .z-desc { color: #7a90b0; font-size: 0.75rem; }
+  .note { background: #12192e; border-left: 3px solid #d7ba7d; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 0.87rem; color: #c8b890; }
+  .note strong { color: #f0d080; }
+  .tip { background: #0e1d18; border-left: 3px solid #4ec9b0; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 0.87rem; color: #9ad0bf; }
+  .tip strong { color: #4ec9b0; }
+  footer { text-align: center; color: #334466; font-size: 0.78rem; padding: 30px; border-top: 1px solid #1a2235; margin-top: 40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>&#128203; คู่มือการเขียน G-Code สไตล์ Heidenhain</h1>
+  <p>วิเคราะห์จากไฟล์ .hnc จริง 14 ไฟล์ — ครอบคลุมโครงสร้าง, Peck Drilling และ Pattern ที่ใช้บ่อย</p>
+</header>
+<div class="container">
+  <nav>
+    <a href="#structure">โครงสร้างโปรแกรม</a>
+    <a href="#header">ส่วน Header</a>
+    <a href="#tool">กำหนด Tool</a>
+    <a href="#startup">ลำดับ Start-up</a>
+    <a href="#peck">Peck Drilling</a>
+    <a href="#mcodes">M/F/R Code</a>
+    <a href="#template">Template พร้อมใช้</a>
+    <a href="#rules">กฎสำคัญ</a>
+  </nav>
+
+  <section id="structure">
+    <h2>1. โครงสร้างโปรแกรมโดยรวม</h2>
+    <p>ทุกไฟล์ .hnc มีโครงสร้างเดียวกัน 5 ส่วนหลัก ตามลำดับเสมอ</p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot" style="background:#1a3060;color:#7ab3f5">1</div><div class="flow-line"></div></div>
+        <div class="flow-body"><div class="title">BEGIN / BLK FORM — ประกาศโปรแกรม &amp; กำหนดชิ้นงาน</div><div class="sub">บรรทัด 0–2: ชื่อโปรแกรม, ขนาด Workpiece</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot" style="background:#1a4030;color:#4ec9b0">2</div><div class="flow-line"></div></div>
+        <div class="flow-body"><div class="title">TOOL DEF / TOOL CALL — กำหนดและเรียกใช้ดอกเจาะ</div><div class="sub">บรรทัด 3–4: นิยาม Radius + เรียก Spindle</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot" style="background:#2a1f00;color:#d7ba7d">3</div><div class="flow-line"></div></div>
+        <div class="flow-body"><div class="title">Start-up Sequence — ยก Z, เปิด Spindle, เปิด Coolant</div><div class="sub">บรรทัด 5–7: ลำดับ Start ที่ตายตัวเสมอ</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot" style="background:#1a1040;color:#c586c0">4</div><div class="flow-line"></div></div>
+        <div class="flow-body"><div class="title">Drilling Loop — วนเจาะแต่ละรู</div><div class="sub">บรรทัด 10+: เคลื่อนไปรู → Peck → Retract → รูถัดไป</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-left"><div class="flow-dot" style="background:#1a1a1a;color:#888">5</div></div>
+        <div class="flow-body"><div class="title">End Sequence — ยก Z กลับ, จบโปรแกรม</div><div class="sub"><code>L Z+50 R0 F10000 M2</code> แล้ว <code>END PGM</code></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="header">
+    <h2>2. ส่วน Header — บรรทัด 0 ถึง 2</h2>
+    <div class="code-block">
+      <div class="code-header">ตัวอย่างจากไฟล์ 7227.hnc <span class="tag">Header</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">0</span><span><span class="kw">BEGIN PGM</span> <span class="num">7227</span> MM</span></div>
+        <div class="line"><span class="ln">1</span><span><span class="kw">BLK FORM</span> <span class="fn">0.1</span> <span class="ax">Z</span> <span class="ax">X</span><span class="num">+0</span> <span class="ax">Y</span><span class="num">+0</span> <span class="ax">Z</span><span class="num">-50</span></span></div>
+        <div class="line"><span class="ln">2</span><span><span class="kw">BLK FORM</span> <span class="fn">0.2</span> <span class="ax">X</span><span class="num">+100</span> <span class="ax">Y</span><span class="num">+100</span> <span class="ax">Z</span><span class="num">+0</span></span></div>
+      </div>
+    </div>
+    <table>
+      <tr><th>คำสั่ง</th><th>ความหมาย</th><th>หมายเหตุ</th></tr>
+      <tr><td class="mono">BEGIN PGM [N] MM</td><td>เริ่มโปรแกรม ชื่อ N หน่วยมิลลิเมตร</td><td>N = ชื่อไฟล์ เช่น 7227</td></tr>
+      <tr><td class="mono">BLK FORM 0.1 Z X+0 Y+0 Z-50</td><td>มุมล่าง-ซ้าย ของ Workpiece simulation</td><td>Z-50 = ความลึกชิ้นงาน 50mm</td></tr>
+      <tr><td class="mono">BLK FORM 0.2 X+100 Y+100 Z+0</td><td>มุมบน-ขวา ของ Workpiece</td><td>Z+0 = ผิวหน้าชิ้นงาน</td></tr>
+    </table>
+    <div class="note"><strong>หมายเหตุ:</strong> BLK FORM ใช้สำหรับ Simulation เท่านั้น ค่า X+100 Y+100 Z-50 ใช้เป็น template คงที่ในทุกไฟล์ ไม่ต้องเปลี่ยน</div>
+  </section>
+
+  <section id="tool">
+    <h2>3. กำหนดและเรียกใช้ Tool — บรรทัด 3 ถึง 4</h2>
+    <div class="code-block">
+      <div class="code-header">Tool Definition &amp; Call <span class="tag">Tool Setup</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">3</span><span><span class="kw">TOOL DEF</span> <span class="num">1</span> <span class="ax">L</span><span class="num">+0</span> <span class="r">R</span><span class="num">+3</span></span></div>
+        <div class="line"><span class="ln">4</span><span><span class="kw">TOOL CALL</span> <span class="num">1</span> <span class="ax">Z</span> <span class="s">S2000</span></span></div>
+      </div>
+    </div>
+    <table>
+      <tr><th>พารามิเตอร์</th><th>ความหมาย</th><th>ค่าที่พบ</th></tr>
+      <tr><td class="mono">TOOL DEF 1</td><td>นิยาม Tool หมายเลข 1</td><td>ใช้ Tool 1 เสมอ</td></tr>
+      <tr><td class="mono">L+0</td><td>Length offset ของดอก</td><td class="ok">+0 ทุกไฟล์ (คงที่)</td></tr>
+      <tr><td class="mono">R+[n]</td><td>รัศมีดอกเจาะ (mm)</td><td class="warn">เปลี่ยนตามดอก: 2.25, 2.5, 3, 3.5, 3.75, 4, 5</td></tr>
+      <tr><td class="mono">TOOL CALL 1 Z S2000</td><td>เรียก Tool 1 แกน Z รอบ 2000 RPM</td><td class="ok">คงที่ทุกไฟล์</td></tr>
+    </table>
+    <div class="cards">
+      <div class="card">
+        <h4>Radius &rarr; ขนาดดอกเจาะ</h4>
+        <ul>
+          <li>R+2.25 &rarr; &#216; 4.5mm</li>
+          <li>R+2.5 &rarr; &#216; 5mm</li>
+          <li>R+3 &rarr; &#216; 6mm</li>
+          <li>R+3.5 &rarr; &#216; 7mm</li>
+          <li>R+3.75 &rarr; &#216; 7.5mm</li>
+          <li>R+4 &rarr; &#216; 8mm</li>
+          <li>R+5 &rarr; &#216; 10mm</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>กฎการตั้งค่า Tool</h4>
+        <ul>
+          <li>ใช้ Tool หมายเลข 1 เสมอ (1 Tool/โปรแกรม)</li>
+          <li>L+0 คงที่ ไม่เปลี่ยน</li>
+          <li>S2000 คงที่ ไม่เปลี่ยน</li>
+          <li>R ต้องตรงกับดอกเจาะจริง</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="startup">
+    <h2>4. ลำดับ Start-up — บรรทัด 5 ถึง 7</h2>
+    <p>3 บรรทัดนี้เหมือนกัน <strong>ทุกไฟล์</strong> ห้ามเปลี่ยน</p>
+    <div class="code-block">
+      <div class="code-header">Start-up Sequence (ตายตัว) <span class="tag">Always Same</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">5</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">+50</span> <span class="r">R0</span> <span class="f">F10000</span> <span class="m">M3</span></span></div>
+        <div class="line"><span class="ln">6</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">-2</span> <span class="ax">Y</span><span class="num">-2</span> <span class="f">F10000</span></span></div>
+        <div class="line"><span class="ln">7</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">+50</span> <span class="f">F1000</span> <span class="m">M8</span></span></div>
+      </div>
+    </div>
+    <table>
+      <tr><th>บรรทัด</th><th>คำสั่ง</th><th>ความหมาย</th></tr>
+      <tr><td>5</td><td class="mono">L Z+50 R0 F10000 M3</td><td>ยก Z+50, ยกเลิก Radius comp (R0), ฟีดเร็ว, <strong>เปิด Spindle CW (M3)</strong></td></tr>
+      <tr><td>6</td><td class="mono">L X-2 Y-2 F10000</td><td>เคลื่อนไปตำแหน่งนอกชิ้นงาน X-2 Y-2</td></tr>
+      <tr><td>7</td><td class="mono">L Z+50 F1000 M8</td><td>ยืนยัน Z+50 ด้วย F1000, <strong>เปิด Coolant (M8)</strong></td></tr>
+    </table>
+    <div class="tip"><strong>เหตุผล X-2 Y-2:</strong> ให้สปินเดิลหมุนเสถียรก่อนเข้าชิ้นงาน เป็น Safe position ก่อนเริ่มเจาะ</div>
+    <h3>การนับบรรทัด (Line Numbers)</h3>
+    <p>บรรทัด 0–7 นับเรียง 1 ต่อ 1 จากนั้น <strong>กระโดดไปบรรทัด 10</strong> แล้วนับเพิ่มทีละ 2 ตลอดโปรแกรม</p>
+    <div class="code-block">
+      <div class="code-header">Pattern การนับบรรทัด</div>
+      <div class="code-body">
+        <div class="line"><span class="ln">0–7</span><span class="cm">← Header + Tool + Start-up (นับทีละ 1)</span></div>
+        <div class="line"><span class="ln" style="color:#d7ba7d">10</span><span class="cm">← รูแรก (กระโดดข้าม 8, 9)</span></div>
+        <div class="line"><span class="ln" style="color:#d7ba7d">12 14 16 18 ...</span><span class="cm">← นับทีละ 2 ตลอด</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="peck">
+    <h2>5. Pattern การเจาะ (Peck Drilling)</h2>
+    <p>มี 2 รูปแบบขึ้นอยู่กับ <strong>ความลึก</strong> ของรูเจาะ</p>
+
+    <h3>5.1 เจาะรูตื้น (Single Peck) — ความลึกไม่เกิน ~5mm</h3>
+    <div class="code-block">
+      <div class="code-header">Single Peck — ตัวอย่าง ลึก -3mm <span class="tag">ตื้น</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">10</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">-312.000</span> <span class="ax">Y</span><span class="num">0.000</span> <span class="f">F1000</span>  <span class="cm">&#8592; เคลื่อนไปตำแหน่ง XY รู (อยู่ที่ safe height)</span></span></div>
+        <div class="line"><span class="ln">12</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">30.000</span> <span class="f">F</span>            <span class="cm">&#8592; ลง Clearance Z30</span></span></div>
+        <div class="line"><span class="ln">14</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span>             <span class="cm">&#8592; Approach ใกล้ผิว Z+3</span></span></div>
+        <div class="line"><span class="ln">16</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-3.000</span> <span class="f">F80</span>          <span class="cm">&#8592; เจาะ -3mm ด้วย F80 (Cutting feed)</span></span></div>
+        <div class="line"><span class="ln">18</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">30.000</span> <span class="f">F</span>            <span class="cm">&#8592; Retract &#8594; รูถัดไป</span></span></div>
+      </div>
+    </div>
+    <div class="peck-viz">
+      <div class="peck-col">
+        <h4>แผนภาพ Z — Single Peck</h4>
+        <div class="z-bar">
+          <div class="z-row clr"><span class="z-val">Z +50</span><span class="z-desc">Safe height</span></div>
+          <div class="z-row clr"><span class="z-val">Z +30</span><span class="z-desc">Clearance height (ระหว่างรู)</span></div>
+          <div class="z-row clr"><span class="z-val">Z +3</span><span class="z-desc">Approach ก่อนเจาะ</span></div>
+          <div class="z-row cut"><span class="z-val">Z -3</span><span class="z-desc">&#8595; Cutting depth F80</span></div>
+          <div class="z-row ret"><span class="z-val">Z +30</span><span class="z-desc">Retract &#8594; รูถัดไป</span></div>
+        </div>
+      </div>
+      <div class="peck-col">
+        <h4>Clearance Height ที่ใช้</h4>
+        <table style="width:100%;margin:0">
+          <tr><th>ค่า</th><th>ใช้กับ</th></tr>
+          <tr><td class="mono">Z30.000</td><td>รูตื้น (5771, 5811, 7227, 7237)</td></tr>
+          <tr><td class="mono">Z10.000</td><td>รูลึก (6201–6204)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>5.2 เจาะรูลึก (Multi Peck) — ความลึกเกิน 5mm</h3>
+    <p>Peck ทีละ 5mm พร้อม Retract กลับ Z+3 ทุกครั้ง ป้องกันเศษติดดอก Pattern: <strong>peck &rarr; retract Z3 &rarr; คืนลงระดับเดิม &rarr; peck ต่อ</strong></p>
+    <div class="code-block">
+      <div class="code-header">Multi Peck — ลึก 28mm (peck ทีละ 5mm) <span class="tag">ลึก</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">10</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">-99.750</span> <span class="ax">Y</span><span class="num">40.000</span> <span class="f">F1000</span></span></div>
+        <div class="line"><span class="ln">12</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">10.000</span> <span class="f">F</span>  <span class="cm">&#8592; Clearance</span></span></div>
+        <div class="line"><span class="ln">14</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span>   <span class="cm">&#8592; Approach</span></span></div>
+        <div class="line"><span class="ln">16</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-2.000</span> <span class="f">F80</span> <span class="cm">&#8592; [Peck 1] เจาะ -2mm (ใส่ F ทุกครั้งที่เป็น Peck แรก)</span></span></div>
+        <div class="line"><span class="ln">18</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span>   <span class="cm">&#8592; Retract Z+3</span></span></div>
+        <div class="line"><span class="ln">20</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-2.000</span> <span class="f">F</span>  <span class="cm">&#8592; คืนลง -2mm (fast)</span></span></div>
+        <div class="line"><span class="ln">22</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-7.000</span> <span class="f">F</span>  <span class="cm">&#8592; [Peck 2] -7mm</span></span></div>
+        <div class="line"><span class="ln">24</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span>   <span class="cm">&#8592; Retract</span></span></div>
+        <div class="line"><span class="ln">26</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-7.000</span> <span class="f">F</span>  <span class="cm">&#8592; คืนลง -7mm</span></span></div>
+        <div class="line"><span class="ln">28</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-12.000</span> <span class="f">F</span> <span class="cm">&#8592; [Peck 3] -12mm</span></span></div>
+        <div class="line"><span class="ln">30</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">32</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-12.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">34</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-17.000</span> <span class="f">F</span> <span class="cm">&#8592; [Peck 4] -17mm</span></span></div>
+        <div class="line"><span class="ln">36</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">38</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-17.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">40</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-22.000</span> <span class="f">F</span> <span class="cm">&#8592; [Peck 5] -22mm</span></span></div>
+        <div class="line"><span class="ln">42</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">44</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-22.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">46</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-27.000</span> <span class="f">F</span> <span class="cm">&#8592; [Peck 6] -27mm</span></span></div>
+        <div class="line"><span class="ln">48</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">50</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-27.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">52</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-28.000</span> <span class="f">F</span> <span class="cm">&#8592; Final depth -28mm</span></span></div>
+        <div class="line"><span class="ln">54</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">10.000</span> <span class="f">F</span>  <span class="cm">&#8592; Retract &#8594; รูถัดไป</span></span></div>
+      </div>
+    </div>
+    <div class="note"><strong>สูตร Multi Peck:</strong> ลำดับ Z ในแต่ละรอบ: <code>-2 &rarr; +3 &rarr; -2 &rarr; -7 &rarr; +3 &rarr; -7 &rarr; -12 &rarr; +3 &rarr; ...</code><br>
+    แต่ละ Peck เพิ่ม 5mm, Retract กลับ Z+3 ทุกครั้ง</div>
+
+    <h3>5.3 เปรียบเทียบตามขนาดดอก</h3>
+    <table>
+      <tr><th>ดอก (R)</th><th>ความลึก</th><th>Feed</th><th>Pattern</th></tr>
+      <tr><td>R+5 (&#216;10mm)</td><td>-3mm</td><td class="warn">F80</td><td>Single peck</td></tr>
+      <tr><td>R+4 (&#216;8mm)</td><td>-9mm</td><td class="warn">F80</td><td>Multi peck 5mm</td></tr>
+      <tr><td>R+3.75 (&#216;7.5mm)</td><td>-28mm</td><td class="warn">F80</td><td>Multi peck 5mm</td></tr>
+      <tr><td>R+3.5 (&#216;7mm)</td><td>-28mm</td><td class="warn">F80</td><td>Multi peck 5mm</td></tr>
+      <tr><td>R+3 (&#216;6mm)</td><td>-3mm / -28mm</td><td class="warn">F80</td><td>Single หรือ Multi</td></tr>
+      <tr><td>R+2.5 (&#216;5mm)</td><td>-3mm deep</td><td class="warn">F70</td><td>Multi peck 5mm</td></tr>
+      <tr><td>R+2.25 (&#216;4.5mm)</td><td>-3mm deep</td><td class="warn">F70</td><td>Multi peck 5mm</td></tr>
+    </table>
+  </section>
+
+  <section id="mcodes">
+    <h2>6. M-Code, F-Code และ R-Code</h2>
+    <div class="cards">
+      <div class="card">
+        <h4>M-Code ที่ใช้</h4>
+        <table style="margin:0">
+          <tr><th>Code</th><th>ความหมาย</th></tr>
+          <tr><td class="mono">M3</td><td>เปิด Spindle หมุน CW</td></tr>
+          <tr><td class="mono">M8</td><td>เปิด Coolant</td></tr>
+          <tr><td class="mono">M2</td><td>จบโปรแกรม</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4>F-Code (Feed Rate)</h4>
+        <table style="margin:0">
+          <tr><th>ค่า</th><th>ใช้เมื่อ</th></tr>
+          <tr><td class="mono">F10000</td><td>Rapid (ยก Z, เปิดโปรแกรม)</td></tr>
+          <tr><td class="mono">F1000</td><td>เคลื่อน XY ไปรู</td></tr>
+          <tr><td class="mono">F80</td><td>Cutting (ดอก &#216;6 ขึ้นไป)</td></tr>
+          <tr><td class="mono">F70</td><td>Cutting (ดอก &#216; &lt; 6mm)</td></tr>
+          <tr><td class="mono">F (ว่าง)</td><td>ใช้ Feed ล่าสุด</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4>R-Code (Radius Comp)</h4>
+        <table style="margin:0">
+          <tr><th>Code</th><th>ใช้ที่ไหน</th></tr>
+          <tr><td class="mono">R0</td><td>บรรทัด 5 และบรรทัดสุดท้าย เท่านั้น</td></tr>
+          <tr><td class="mono">(ไม่ใส่)</td><td>ทุก L ระหว่างเจาะ ไม่ใส่ R เลย</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="tip"><strong>F ว่าง:</strong> <code>L Z30.000 F</code> คือใช้ Feed rate จากบรรทัดก่อนหน้า ไม่ต้องพิมพ์ซ้ำ แต่ต้องรู้ว่า Feed ล่าสุดคือค่าใด</div>
+  </section>
+
+  <section id="template">
+    <h2>7. Template พร้อมใช้</h2>
+    <h3>Template A — เจาะรูตื้น (Single Peck)</h3>
+    <div class="code-block">
+      <div class="code-header">Single Peck Template <span class="tag">แก้ [RADIUS], [X], [Y], [DEPTH]</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">0</span><span><span class="kw">BEGIN PGM</span> <span class="num">XXXX</span> MM</span></div>
+        <div class="line"><span class="ln">1</span><span><span class="kw">BLK FORM</span> <span class="fn">0.1</span> <span class="ax">Z</span> <span class="ax">X</span><span class="num">+0</span> <span class="ax">Y</span><span class="num">+0</span> <span class="ax">Z</span><span class="num">-50</span></span></div>
+        <div class="line"><span class="ln">2</span><span><span class="kw">BLK FORM</span> <span class="fn">0.2</span> <span class="ax">X</span><span class="num">+100</span> <span class="ax">Y</span><span class="num">+100</span> <span class="ax">Z</span><span class="num">+0</span></span></div>
+        <div class="line"><span class="ln">3</span><span><span class="kw">TOOL DEF</span> <span class="num">1</span> <span class="ax">L</span><span class="num">+0</span> <span class="r">R</span><span class="num">+[RADIUS]</span></span></div>
+        <div class="line"><span class="ln">4</span><span><span class="kw">TOOL CALL</span> <span class="num">1</span> <span class="ax">Z</span> <span class="s">S2000</span></span></div>
+        <div class="line"><span class="ln">5</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">+50</span> <span class="r">R0</span> <span class="f">F10000</span> <span class="m">M3</span></span></div>
+        <div class="line"><span class="ln">6</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">-2</span> <span class="ax">Y</span><span class="num">-2</span> <span class="f">F10000</span></span></div>
+        <div class="line"><span class="ln">7</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">+50</span> <span class="f">F1000</span> <span class="m">M8</span></span></div>
+        <div class="line" style="margin-top:6px"><span class="ln">10</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">[X1]</span> <span class="ax">Y</span><span class="num">[Y1]</span> <span class="f">F1000</span>    <span class="cm">&#8592; รูที่ 1</span></span></div>
+        <div class="line"><span class="ln">12</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">30.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">14</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">16</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">[DEPTH]</span> <span class="f">F80</span></span></div>
+        <div class="line"><span class="ln">18</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">30.000</span> <span class="f">F</span>          <span class="cm">&#8592; ไปรูถัดไป</span></span></div>
+        <div class="line" style="margin-top:6px"><span class="ln">20</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">[X2]</span> <span class="ax">Y</span><span class="num">[Y2]</span> <span class="f">F1000</span>    <span class="cm">&#8592; รูที่ 2 (Z ยังอยู่ที่ 30)</span></span></div>
+        <div class="line"><span class="ln">22</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span>             <span class="cm">&#8592; ไม่ต้องลง 30 อีกถ้ายังอยู่ที่ 30</span></span></div>
+        <div class="line"><span class="ln">24</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">[DEPTH]</span> <span class="f">F80</span></span></div>
+        <div class="line"><span class="ln">26</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">30.000</span> <span class="f">F</span></span></div>
+        <div class="line" style="margin-top:6px"><span class="ln">XX</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">+50</span> <span class="r">R0</span> <span class="f">F10000</span> <span class="m">M2</span></span></div>
+        <div class="line"><span class="ln">XX</span><span><span class="kw">END PGM</span> <span class="num">XXXX</span> MM</span></div>
+      </div>
+    </div>
+
+    <h3>Template B — เจาะรูลึก (Multi Peck 5mm/peck)</h3>
+    <div class="code-block">
+      <div class="code-header">Multi Peck Template — 1 รู ลึก 28mm <span class="tag">แก้ [X], [Y] และทำซ้ำต่อ</span></div>
+      <div class="code-body">
+        <div class="line"><span class="ln">10</span><span><span class="kw">L</span> <span class="ax">X</span><span class="num">[X1]</span> <span class="ax">Y</span><span class="num">[Y1]</span> <span class="f">F1000</span></span></div>
+        <div class="line"><span class="ln">12</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">10.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">14</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">16</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-2.000</span> <span class="f">F80</span></span></div>
+        <div class="line"><span class="ln">18</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">20</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-2.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">22</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-7.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">24</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">26</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-7.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">28</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-12.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">30</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">32</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-12.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">34</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-17.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">36</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">38</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-17.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">40</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-22.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">42</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">44</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-22.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">46</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-27.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">48</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">3.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">50</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-27.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">52</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">-28.000</span> <span class="f">F</span></span></div>
+        <div class="line"><span class="ln">54</span><span><span class="kw">L</span> <span class="ax">Z</span><span class="num">10.000</span> <span class="f">F</span>  <span class="cm">&#8592; Retract &#8594; วนรูถัดไป</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rules">
+    <h2>8. กฎสำคัญ (สรุป)</h2>
+    <div class="cards">
+      <div class="card">
+        <h4>&#10003; ต้องทำเสมอ</h4>
+        <ul>
+          <li>BEGIN/END PGM ใส่เลขตรงกับชื่อไฟล์</li>
+          <li>BLK FORM 0.1 และ 0.2 ทุกโปรแกรม</li>
+          <li>Start-up 3 บรรทัด (5–7) ตายตัว</li>
+          <li>กระโดดจาก 7 &rarr; 10 นับ +2 ตลอด</li>
+          <li>จบด้วย <code>L Z+50 R0 F10000 M2</code></li>
+          <li>XY ใส่ทศนิยม 3 ตำแหน่ง: <code>X-312.000</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>&#9889; Peck Rules</h4>
+        <ul>
+          <li>Approach ที่ Z+3 ก่อนเจาะทุกครั้ง</li>
+          <li>Cutting: F80 (ดอกใหญ่) / F70 (ดอกเล็ก)</li>
+          <li>Peck แรก ใส่ F เสมอ</li>
+          <li>Retract ระหว่าง Peck = Z+3 (ไม่ใช่ Z10/Z30)</li>
+          <li>ระหว่างรู: retract Z10 หรือ Z30</li>
+          <li>Multi Peck: เพิ่มความลึกทีละ 5mm</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>&#128683; ห้ามทำ</h4>
+        <ul>
+          <li>ห้ามเปลี่ยน S — ใช้ S2000 เสมอ</li>
+          <li>ห้ามใส่ Radius Comp ระหว่างเจาะ</li>
+          <li>R0 มีเฉพาะบรรทัด 5 และสุดท้าย</li>
+          <li>ห้ามเคลื่อน X/Y ขณะ Z อยู่ในชิ้นงาน</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>สรุป Z Height ที่ใช้</h3>
+    <table>
+      <tr><th>Z ค่า</th><th>ชื่อ</th><th>ใช้เมื่อ</th></tr>
+      <tr><td class="mono">Z+50</td><td>Safe Height</td><td>เริ่ม/จบโปรแกรม</td></tr>
+      <tr><td class="mono">Z30.000</td><td>Clearance สูง</td><td>ระหว่างรู — โปรแกรมตื้น</td></tr>
+      <tr><td class="mono">Z10.000</td><td>Clearance ต่ำ</td><td>ระหว่างรู — โปรแกรมลึก</td></tr>
+      <tr><td class="mono">Z3.000</td><td>Approach / Retract Peck</td><td>ก่อนเจาะ / ระหว่าง Peck ทุกครั้ง</td></tr>
+      <tr><td class="mono">Z-n.nnn</td><td>Cutting Depth</td><td>ค่าลบ = เข้าในชิ้นงาน</td></tr>
+    </table>
+  </section>
+</div>
+<footer>วิเคราะห์จากไฟล์ .hnc: 5771, 5772, 5811, 5812, 6201, 6202, 6203, 6204, 7227, 7228, 7229, 7237, 7238, 7239</footer>
+</body>
+</html>
